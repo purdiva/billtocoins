@@ -2,7 +2,9 @@ package com.purdiva.billtocoins.services;
 
 import com.purdiva.billtocoins.exception.InvalidBillDenominationException;
 import com.purdiva.billtocoins.exception.NotEnoughChangeException;
+import com.purdiva.billtocoins.request.FillDrawerRequest;
 import com.purdiva.billtocoins.response.ChangeResponse;
+import com.purdiva.billtocoins.response.FillDrawerResponse;
 import com.purdiva.billtocoins.util.CashDrawerUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
 
 import static com.purdiva.billtocoins.util.CashDrawerUtils.FORTY_DOLLAR_BILL;
 import static com.purdiva.billtocoins.util.CashDrawerUtils.FIFTY_DOLLAR_BILL;
@@ -136,6 +137,16 @@ class ChangeServiceImplTest {
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
 
+    }
+
+    @Test
+    void fillDrawer_Coins_Of_Each() {
+        changeService.fillDrawer(new FillDrawerRequest(400, 300, 200, 100));
+        FillDrawerResponse fillDrawerResponse = changeService.getDrawerCounts();
+        assertEquals(400, fillDrawerResponse.getQuarterCount());
+        assertEquals(300, fillDrawerResponse.getDimeCount());
+        assertEquals(200, fillDrawerResponse.getNickelCount());
+        assertEquals(100, fillDrawerResponse.getPennyCount());
     }
 
 }

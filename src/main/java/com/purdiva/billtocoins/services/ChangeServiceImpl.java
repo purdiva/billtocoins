@@ -3,7 +3,9 @@ package com.purdiva.billtocoins.services;
 import com.purdiva.billtocoins.config.ApplicationProps;
 import com.purdiva.billtocoins.exception.InvalidBillDenominationException;
 import com.purdiva.billtocoins.exception.NotEnoughChangeException;
+import com.purdiva.billtocoins.request.FillDrawerRequest;
 import com.purdiva.billtocoins.response.ChangeResponse;
+import com.purdiva.billtocoins.response.FillDrawerResponse;
 import com.purdiva.billtocoins.util.CashDrawerUtils.CashDrawer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +41,19 @@ public class ChangeServiceImpl implements ChangeService {
         } else {
             return new ChangeResponse();
         }
-
     }
 
     @Override
-    public void resetCashDrawer() {
-        drw.resetCashDrawer();
+    public void fillDrawer(FillDrawerRequest fillDrawerRequest) {
+        drw.setQuarterCount(fillDrawerRequest.getQuarterCount());
+        drw.setDimeCount(fillDrawerRequest.getDimeCount());
+        drw.setNickelCount(fillDrawerRequest.getNickelCount());
+        drw.setPennyCount(fillDrawerRequest.getPennyCount());
+    }
+
+    @Override
+    public FillDrawerResponse getDrawerCounts() {
+        return new FillDrawerResponse(drw.getQuarterCount(), drw.getDimeCount(), drw.getNickelCount(), drw.getPennyCount());
     }
 
     private ChangeResponse calculateChange(Integer bill) {
@@ -149,8 +158,8 @@ public class ChangeServiceImpl implements ChangeService {
     }
 
     private boolean validateDenomination(Integer denomination) {
-        if(!applicationProps.getAccepted().stream()
-                .anyMatch(denom -> (denom.intValue() == denomination))) {
+        if(applicationProps.getAccepted().stream()
+                .noneMatch(denom -> (denom.intValue() == denomination))) {
             final String errMsgInvalid = "$" + denomination.toString() + " bills are not accepted at this machine.";
             log.error(errMsgInvalid);
             throw new InvalidBillDenominationException(errMsgInvalid);
