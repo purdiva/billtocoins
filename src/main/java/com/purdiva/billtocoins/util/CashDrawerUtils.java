@@ -1,6 +1,7 @@
 package com.purdiva.billtocoins.util;
 
 import com.purdiva.billtocoins.domain.Coin;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +26,7 @@ public class CashDrawerUtils {
 
 
     @Component
-    public static class CashDrawer {
+    public static class CashDrawer implements InitializingBean {
 
         @Value("${cashdrawer.initialize.quartercount}")
         Integer beginQuarterCount;
@@ -40,7 +41,7 @@ public class CashDrawerUtils {
         Integer beginPennyCount;
 
 
-        private Map<Coin, Integer> coins = new HashMap<Coin, Integer>() {{
+        private Map<Coin, Integer> coins = new HashMap<>() {{
             put(QUARTER, beginQuarterCount);
             put(DIME, beginDimeCount);
             put(NICKEL, beginNickelCount);
@@ -81,6 +82,11 @@ public class CashDrawerUtils {
             setDimeCount(beginDimeCount);
             setNickelCount(beginNickelCount);
             setPennyCount(beginPennyCount);
+        }
+
+        @Override
+        public void afterPropertiesSet() {
+            resetCashDrawer();
         }
     }
 }
