@@ -1,0 +1,31 @@
+server:
+  port: 8200
+  error:
+    include-message: always
+    include-exception: true
+
+logging:
+  level:
+    org.springframework: ERROR
+    com.purdiva.billtocoins: DEBUG
+
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"
+
+cashdrawer:
+  initialize:
+    quartercount: 100
+    dimecount: 100
+    nickelcount: 100
+    pennycount: 100
+
+denominations:
+  accepted:
+    - 1
+    - 2
+    - 5
+    - 10
+    - 20
+    - 50
+    - 100
+
