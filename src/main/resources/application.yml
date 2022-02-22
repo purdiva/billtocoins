@@ -14,6 +14,8 @@ logging:
 
 cashdrawer:
   initialize:
+    thirtyfourcount: 100
+    thirtythreecount: 100
     quartercount: 100
     dimecount: 100
     nickelcount: 100

@@ -5,10 +5,8 @@ import com.purdiva.billtocoins.request.FillDrawerRequest;
 import com.purdiva.billtocoins.response.ChangeResponse;
 import com.purdiva.billtocoins.response.FillDrawerResponse;
 import com.purdiva.billtocoins.services.ChangeService;
-import com.purdiva.billtocoins.services.ChangeServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,11 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/change")
 public class ChangeController {
 
-    @Autowired
-    private ChangeService changeService;
-
+    private final ChangeService changeService;
     private static final Logger log = LoggerFactory.getLogger(ChangeController.class);
 
+    public ChangeController(ChangeService changeService) {
+        this.changeService = changeService;
+    }
 
     @PostMapping("/makechange")
     public ChangeResponse makeChange(@RequestBody ChangeRequest changeRequest) {

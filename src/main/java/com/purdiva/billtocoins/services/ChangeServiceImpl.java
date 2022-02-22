@@ -1,6 +1,7 @@
 package com.purdiva.billtocoins.services;
 
 import com.purdiva.billtocoins.config.ApplicationProps;
+import com.purdiva.billtocoins.domain.Coin;
 import com.purdiva.billtocoins.exception.InvalidBillDenominationException;
 import com.purdiva.billtocoins.exception.NotEnoughChangeException;
 import com.purdiva.billtocoins.request.FillDrawerRequest;
@@ -9,30 +10,39 @@ import com.purdiva.billtocoins.response.FillDrawerResponse;
 import com.purdiva.billtocoins.util.CashDrawerUtils.CashDrawer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.purdiva.billtocoins.util.CashDrawerUtils.DIME;
 import static com.purdiva.billtocoins.util.CashDrawerUtils.NICKEL;
 import static com.purdiva.billtocoins.util.CashDrawerUtils.PENNY;
 import static com.purdiva.billtocoins.util.CashDrawerUtils.QUARTER;
+import static com.purdiva.billtocoins.util.CashDrawerUtils.THIRTYFOUR;
+import static com.purdiva.billtocoins.util.CashDrawerUtils.THIRTYTHREE;
 
 
 @Service
 public class ChangeServiceImpl implements ChangeService {
 
-    @Autowired
-    CashDrawer drw;
+    private final CashDrawer drw;
+    private final ApplicationProps applicationProps;
 
-    @Autowired
-    ApplicationProps applicationProps;
+    public ChangeServiceImpl(CashDrawer drw, ApplicationProps applicationProps) {
+        Assert.notNull(drw, "CashDrawer cannot be null");
+        Assert.notNull(applicationProps, "Application Properties cannot be null");
+        this.drw = drw;
+        this.applicationProps = applicationProps;
+    }
 
     private static final Logger log = LoggerFactory.getLogger(ChangeServiceImpl.class);
     private final MathContext mathContext = new MathContext(4);
+    private final List<Coin> coins = Arrays.asList(THIRTYFOUR, THIRTYTHREE, QUARTER, DIME, NICKEL, PENNY);
 
     @Override
     public ChangeResponse makeChange(Integer bill) {
@@ -45,6 +55,8 @@ public class ChangeServiceImpl implements ChangeService {
 
     @Override
     public void fillDrawer(FillDrawerRequest fillDrawerRequest) {
+        drw.setThirtyfourCount(fillDrawerRequest.getThirtyfourCount());
+        drw.setThirtythreeCount(fillDrawerRequest.getThirtythreeCount());
         drw.setQuarterCount(fillDrawerRequest.getQuarterCount());
         drw.setDimeCount(fillDrawerRequest.getDimeCount());
         drw.setNickelCount(fillDrawerRequest.getNickelCount());
@@ -53,108 +65,54 @@ public class ChangeServiceImpl implements ChangeService {
 
     @Override
     public FillDrawerResponse getDrawerCounts() {
-        return new FillDrawerResponse(drw.getQuarterCount(), drw.getDimeCount(), drw.getNickelCount(), drw.getPennyCount());
+        return new FillDrawerResponse(drw.getThirtyfourCount(),drw.getThirtythreeCount(),drw.getQuarterCount(), drw.getDimeCount(), drw.getNickelCount(), drw.getPennyCount());
     }
 
     private ChangeResponse calculateChange(Integer bill) {
-        BigDecimal remainingBill = BigDecimal.valueOf(bill).round(mathContext);
-        log.debug("Bill denomination to be changed ${}", remainingBill.round(mathContext));
-        ChangeResponse changeResponse = new ChangeResponse(0, 0, 0, 0);
+        BigDecimal remainingBillValue = BigDecimal.valueOf(bill).round(mathContext);
+        ChangeResponse resultChangeResponse = new ChangeResponse();
 
-        final BigDecimal quarterValue = QUARTER.getValue();
-        if(remainingBill.compareTo(quarterValue) > 0) {
-            changeResponse.setQuarterCount(howManyQuarters(remainingBill));
-            remainingBill = remainingBill.subtract(quarterValue.multiply(BigDecimal.valueOf(changeResponse.getQuarterCount()))).round(mathContext);
-            log.debug("Bill amount remaining to be changed = {}", remainingBill.toString());
+        for(Coin coin : coins) {
+            if(remainingBillValue.compareTo(BigDecimal.ZERO) > 0) {
+                Integer coinsNeeded = calculateNumberOfCoinsByCoinType(coin, remainingBillValue);
+                removeCoinsFromDrawer(coin, coinsNeeded);
+                remainingBillValue = remainingBillValue.subtract(coin.getValue().multiply(BigDecimal.valueOf(coinsNeeded)));
+                resultChangeResponse.setCoinCount(coin, coinsNeeded);
+            }
         }
-
-        final BigDecimal dimeValue = DIME.getValue();
-        if(remainingBill.compareTo(dimeValue) > 0) {
-            changeResponse.setDimeCount(howManyDimes(remainingBill));
-            remainingBill = remainingBill.subtract(dimeValue.multiply(BigDecimal.valueOf(changeResponse.getDimeCount()))).round(mathContext);
-            log.debug("Bill amount remaining to be changed = {}", remainingBill.toString());
-        }
-
-        final BigDecimal nickelValue = NICKEL.getValue();
-        if(remainingBill.compareTo(nickelValue) > 0) {
-            changeResponse.setNickelCount(howManyNickels(remainingBill));
-            remainingBill = remainingBill.subtract(nickelValue.multiply(BigDecimal.valueOf(changeResponse.getNickelCount()))).round(mathContext);
-            log.debug("Bill amount remaining to be changed = {}", remainingBill.toString());
-        }
-
-        final BigDecimal pennyValue = PENNY.getValue();
-        if(remainingBill.compareTo(pennyValue) > 0) {
-            changeResponse.setPennyCount(howManyPennies(remainingBill));
-            remainingBill = remainingBill.subtract(pennyValue.multiply(BigDecimal.valueOf(changeResponse.getPennyCount()))).round(mathContext);
-            log.debug("Bill amount remaining to be changed = {}", remainingBill.toString());
-        }
-
-        return changeResponse;
+        return resultChangeResponse;
     }
 
-    private Integer howManyQuarters(BigDecimal billValue) {
-        final Integer numQuartersAvailable = getQuarterCount();
-        final BigDecimal quarterValueAvailable = QUARTER.getValue().multiply(BigDecimal.valueOf(numQuartersAvailable));
-        if(quarterValueAvailable.compareTo(billValue) <= 0) {
-            drw.setQuarterCount(0);
-            return numQuartersAvailable;        //use all available quarters
+    private Integer calculateNumberOfCoinsByCoinType(Coin coin, BigDecimal remainingBill) {
+        final Integer numCoinsAvailable = drw.getCoinCountByType(coin);
+        final BigDecimal coinValueAvailable = coin.getValue().multiply(BigDecimal.valueOf(numCoinsAvailable));
+        if(coinValueAvailable.compareTo(remainingBill) <= 0) {
+            return numCoinsAvailable;        //use all available of this coin
         } else {
-            final Integer numQuartersNeeded = billValue.divide(QUARTER.getValue(),2, RoundingMode.HALF_UP).intValue();
-            drw.setQuarterCount(numQuartersAvailable - numQuartersNeeded);
-            log.debug("Quarters remaining in drawer {}", getQuarterCount().toString());
-            return numQuartersNeeded;
+            return remainingBill.divide(coin.getValue(), 2, RoundingMode.HALF_UP).intValue();
         }
     }
 
-    private Integer howManyDimes(BigDecimal billValue) {
-        final Integer numDimesAvailable = getDimeCount();
-        final BigDecimal dimeValueAvailable = DIME.getValue().multiply(BigDecimal.valueOf(numDimesAvailable));
-        if(dimeValueAvailable.compareTo(billValue) <= 0) {
-            drw.setDimeCount(0);
-            return numDimesAvailable;        //use all available dimes
-        } else {
-            final Integer numDimesNeeded = billValue.divide(DIME.getValue(),2, RoundingMode.HALF_UP).intValue();
-            drw.setDimeCount(numDimesAvailable - numDimesNeeded);
-            log.debug("Dimes remaining in drawer {}", getDimeCount().toString());
-            return numDimesNeeded;
-        }
+    private Integer removeCoinsFromDrawer(Coin coin, Integer numberOfCoinsRemoved) {
+        final Integer numCoinsAvailable = drw.getCoinCountByType(coin);
+        final Integer coinCountRemaining = numCoinsAvailable - numberOfCoinsRemoved;
+        drw.setCoinCountByType(coin, coinCountRemaining);
+        log.debug("{}(s) remaining in drawer {}", coin.getName(), coinCountRemaining.toString());
+        return coinCountRemaining;
     }
 
-    private Integer howManyNickels(BigDecimal billValue) {
-        final Integer numNickelsAvailable = getNickelCount();
-        final BigDecimal nickelValueAvailable = NICKEL.getValue().multiply(BigDecimal.valueOf(numNickelsAvailable));
-        if(nickelValueAvailable.compareTo(billValue) <= 0) {
-            drw.setNickelCount(0);
-            return numNickelsAvailable;        //use all available nickels
-        } else {
-            final Integer numNickelsNeeded = billValue.divide(NICKEL.getValue(),2, RoundingMode.HALF_UP).intValue();
-            drw.setNickelCount(numNickelsAvailable - numNickelsNeeded);
-            log.debug("Nickels remaining in drawer {}", getNickelCount().toString());
-            return numNickelsNeeded;
-        }
-    }
-
-    private Integer howManyPennies(BigDecimal billValue) {
-        final Integer numPenniesAvailable = getPennyCount();
-        final BigDecimal penniesValueAvailable = PENNY.getValue().multiply(BigDecimal.valueOf(numPenniesAvailable));
-        if(penniesValueAvailable.compareTo(billValue.round(mathContext)) <= 0) {
-            drw.setPennyCount(0);
-            return numPenniesAvailable;        //use all available pennies
-        } else {
-            final Integer numPenniesNeeded = billValue.divide(PENNY.getValue(),2, RoundingMode.HALF_UP).intValue();
-            drw.setPennyCount(numPenniesAvailable - numPenniesNeeded);
-            log.debug("Pennies remaining in drawer {}", getPennyCount().toString());
-            return numPenniesNeeded;
-        }
-    }
-
-    private BigDecimal getDrawerTotal() {
-        BigDecimal sum;
-        sum = PENNY.getValue().multiply(BigDecimal.valueOf(getPennyCount()));
-        sum = sum.add(NICKEL.getValue().multiply(BigDecimal.valueOf(getNickelCount())));
-        sum = sum.add(DIME.getValue().multiply(BigDecimal.valueOf(getDimeCount())));
-        sum = sum.add(QUARTER.getValue().multiply(BigDecimal.valueOf(getQuarterCount())));
+    private BigDecimal getDrawerTotalValue() {
+        BigDecimal sum = getDrawerSlotTotalValue(THIRTYFOUR);
+        sum = sum.add(getDrawerSlotTotalValue(THIRTYTHREE));
+        sum = sum.add(getDrawerSlotTotalValue(QUARTER));
+        sum = sum.add(getDrawerSlotTotalValue(DIME));
+        sum = sum.add(getDrawerSlotTotalValue(NICKEL));
+        sum = sum.add(getDrawerSlotTotalValue(PENNY));
         return sum;
+    }
+
+    private BigDecimal getDrawerSlotTotalValue(Coin coin) {
+        return coin.getValue().multiply(BigDecimal.valueOf(drw.getCoinCountByType(coin)));
     }
 
     private boolean validateDenomination(Integer denomination) {
@@ -168,7 +126,7 @@ public class ChangeServiceImpl implements ChangeService {
     }
 
     private boolean verifyEnoughAvailableInDrawer(Integer bill) {
-        BigDecimal availableChangeTotal = getDrawerTotal().round(mathContext);
+        BigDecimal availableChangeTotal = getDrawerTotalValue().round(mathContext);
         if (BigDecimal.valueOf(bill).compareTo(availableChangeTotal) > 0) {
             final String errMsgAmount = "Not enough money to change a $" + bill.toString() + " bill";
             log.error(errMsgAmount);
@@ -176,23 +134,4 @@ public class ChangeServiceImpl implements ChangeService {
         }
         return true;
     }
-
-    private Integer getQuarterCount() {
-        return drw.getQuarterCount();
-    }
-
-    private Integer getDimeCount() {
-        return drw.getDimeCount();
-    }
-
-    private Integer getNickelCount() {
-        return drw.getNickelCount();
-    }
-
-    private Integer getPennyCount() {
-        return drw.getPennyCount();
-    }
-
-
-
 }

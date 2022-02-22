@@ -1,17 +1,17 @@
 package com.purdiva.billtocoins.request;
 
-import com.purdiva.billtocoins.response.FillDrawerResponse;
-
 public class FillDrawerRequest {
 
-    private Integer pennyCount = 0;
-    private Integer nickelCount = 0;
-    private Integer dimeCount = 0;
-    private Integer quarterCount = 0;
+    private Integer pennyCount;
+    private Integer nickelCount;
+    private Integer dimeCount;
+    private Integer quarterCount;
+    private Integer thirtythreeCount;
+    private Integer thirtyfourCount;
 
-    public FillDrawerRequest() {}
-
-    public FillDrawerRequest(Integer quarterCount, Integer dimeCount, Integer nickelCount, Integer pennyCount) {
+    public FillDrawerRequest(Integer thirtyfourCount, Integer thirtythreeCount, Integer quarterCount, Integer dimeCount, Integer nickelCount, Integer pennyCount) {
+        this.thirtyfourCount = thirtyfourCount;
+        this.thirtythreeCount = thirtythreeCount;
         this.quarterCount = quarterCount;
         this.dimeCount = dimeCount;
         this.nickelCount = nickelCount;
@@ -50,6 +50,17 @@ public class FillDrawerRequest {
         this.quarterCount = quarterCount;
     }
 
+    public Integer getThirtythreeCount() { return thirtythreeCount; }
+
+    public void setThirtythreeCount(Integer thirtythreeCount) {
+        this.thirtythreeCount = thirtythreeCount;
+    }
+
+    public Integer getThirtyfourCount() { return thirtyfourCount; }
+
+    public void setThirtyfourCount(Integer thirtyfourCount) {
+        this.thirtyfourCount = thirtyfourCount;
+    }
     @Override
     public String toString() {
         return "FillDrawerRequest{" +
@@ -57,6 +68,8 @@ public class FillDrawerRequest {
                 ", nickelCount=" + nickelCount +
                 ", dimeCount=" + dimeCount +
                 ", quarterCount=" + quarterCount +
+                ", thirtythreeCount=" + thirtythreeCount +
+                ", thirtyfourCount=" + thirtyfourCount +
                 '}';
     }
 }

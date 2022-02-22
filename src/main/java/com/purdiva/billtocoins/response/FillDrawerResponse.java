@@ -6,10 +6,14 @@ public class FillDrawerResponse {
     private Integer nickelCount = 0;
     private Integer dimeCount = 0;
     private Integer quarterCount = 0;
+    private Integer thirtythreeCount = 0;
+    private Integer thirtyfourCount = 0;
 
     public FillDrawerResponse() {}
 
-    public FillDrawerResponse(Integer quarterCount, Integer dimeCount, Integer nickelCount, Integer pennyCount) {
+    public FillDrawerResponse(Integer thirtyfourCount, Integer thirtythreeCount, Integer quarterCount, Integer dimeCount, Integer nickelCount, Integer pennyCount) {
+        this.thirtyfourCount = thirtyfourCount;
+        this.thirtythreeCount = thirtythreeCount;
         this.quarterCount = quarterCount;
         this.dimeCount = dimeCount;
         this.nickelCount = nickelCount;
@@ -46,5 +50,17 @@ public class FillDrawerResponse {
 
     public void setQuarterCount(Integer quarterCount) {
         this.quarterCount = quarterCount;
+    }
+
+    public Integer getThirtythreeCount() { return thirtythreeCount; }
+
+    public void setThirtythreeCount(Integer thirtythreeCount) {
+        this.thirtythreeCount = thirtythreeCount;
+    }
+
+    public Integer getThirtyfourCount() { return thirtyfourCount; }
+
+    public void setThirtyfourCount(Integer thirtyfourCount) {
+        this.thirtyfourCount = thirtyfourCount;
     }
 }

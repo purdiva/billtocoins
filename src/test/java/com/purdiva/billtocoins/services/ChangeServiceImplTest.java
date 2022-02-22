@@ -41,17 +41,17 @@ class ChangeServiceImplTest {
     }
 
     @Test
-    void makeChange_tooLargeBill_Hundred_Dollar_Bill_throws_NotEnoughChangeException() {
-        Exception exception = assertThrows(NotEnoughChangeException.class, () -> changeService.makeChange(HUNDRED_DOLLAR_BILL));
-        final String expectedMessage = "Not enough money to change a $100 bill";
-        String actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(expectedMessage));
-    }
+    void makeChange_Exceed_Drawer_Value_Hundred_Ten_dollars_throws_NotEnoughChangeException() {
+        ChangeResponse changeResponse100 = changeService.makeChange(HUNDRED_DOLLAR_BILL);
+        assertEquals(100, changeResponse100.getThirtyfourCount());
+        assertEquals(100, changeResponse100.getThirtythreeCount());
+        assertEquals(100, changeResponse100.getQuarterCount());
+        assertEquals(80, changeResponse100.getDimeCount());
+        assertEquals(0, changeResponse100.getNickelCount());
+        assertEquals(0, changeResponse100.getPennyCount());
 
-    @Test
-    void makeChange_tooLargeBill_Fifty_Dollar_Bill_throws_NotEnoughChangeException() {
-        Exception exception = assertThrows(NotEnoughChangeException.class, () -> changeService.makeChange(FIFTY_DOLLAR_BILL));
-        final String expectedMessage = "Not enough money to change a $50 bill";
+        Exception exception = assertThrows(NotEnoughChangeException.class, () -> changeService.makeChange(TEN_DOLLAR_BILL));
+        final String expectedMessage = "Not enough money to change a $10 bill";
         String actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
     }
@@ -73,76 +73,92 @@ class ChangeServiceImplTest {
     }
 
     @Test
-    void makeChange_multipleBills_Twenty_And_Ten_And_Five_And_One_success() {
-        ChangeResponse changeResponse20 = changeService.makeChange(TWENTY_DOLLAR_BILL);
-        assertEquals(80, changeResponse20.getQuarterCount());
-        assertEquals(0, changeResponse20.getDimeCount());
-        assertEquals(0, changeResponse20.getNickelCount());
-        assertEquals(0, changeResponse20.getPennyCount());
-
-        ChangeResponse changeResponse10 = changeService.makeChange(TEN_DOLLAR_BILL);
-        assertEquals(20, changeResponse10.getQuarterCount());
-        assertEquals(50, changeResponse10.getDimeCount());
-        assertEquals(0, changeResponse10.getNickelCount());
-        assertEquals(0, changeResponse10.getPennyCount());
-
-        ChangeResponse changeResponse5 = changeService.makeChange(FIVE_DOLLAR_BILL);
-        assertEquals(0, changeResponse5.getQuarterCount());
-        assertEquals(50, changeResponse5.getDimeCount());
-        assertEquals(0, changeResponse5.getNickelCount());
-        assertEquals(0, changeResponse5.getPennyCount());
-
-        ChangeResponse changeResponse2 = changeService.makeChange(TWO_DOLLAR_BILL);
-        assertEquals(0, changeResponse2.getQuarterCount());
-        assertEquals(0, changeResponse2.getDimeCount());
-        assertEquals(40, changeResponse2.getNickelCount());
-        assertEquals(0, changeResponse2.getPennyCount());
-
-        ChangeResponse changeResponseMoreNickels = changeService.makeChange(TWO_DOLLAR_BILL);
-        assertEquals(0, changeResponseMoreNickels.getQuarterCount());
-        assertEquals(0, changeResponseMoreNickels.getDimeCount());
-        assertEquals(40, changeResponseMoreNickels.getNickelCount());
-        assertEquals(0, changeResponseMoreNickels.getPennyCount());
-
-        ChangeResponse changeResponseFinal20Nickels = changeService.makeChange(ONE_DOLLAR_BILL);
-        assertEquals(0, changeResponseFinal20Nickels.getQuarterCount());
-        assertEquals(0, changeResponseFinal20Nickels.getDimeCount());
-        assertEquals(20, changeResponseFinal20Nickels.getNickelCount());
-        assertEquals(0, changeResponseFinal20Nickels.getPennyCount());
-
-        ChangeResponse changeResponse100Pennies = changeService.makeChange(ONE_DOLLAR_BILL);
-        assertEquals(0, changeResponse100Pennies.getQuarterCount());
-        assertEquals(0, changeResponse100Pennies.getDimeCount());
-        assertEquals(0, changeResponse100Pennies.getNickelCount());
-        assertEquals(100, changeResponse100Pennies.getPennyCount());
+    void makeChange_Hundred_dollars_success() {
+        ChangeResponse changeResponse100 = changeService.makeChange(HUNDRED_DOLLAR_BILL);
+        assertEquals(100, changeResponse100.getThirtyfourCount());
+        assertEquals(100, changeResponse100.getThirtythreeCount());
+        assertEquals(100, changeResponse100.getQuarterCount());
+        assertEquals(80, changeResponse100.getDimeCount());
+        assertEquals(0, changeResponse100.getNickelCount());
+        assertEquals(0, changeResponse100.getPennyCount());
     }
 
     @Test
-    void makeChange_Change_Twenty_Three_Times_Not_Enough_Change_For_Third_Bill_fail() {
+    void makeChange_Fifty_dollars_success() {
+        ChangeResponse changeResponse50 = changeService.makeChange(FIFTY_DOLLAR_BILL);
+        assertEquals(100, changeResponse50.getThirtyfourCount());
+        assertEquals(48, changeResponse50.getThirtythreeCount());
+        assertEquals(0, changeResponse50.getQuarterCount());
+        assertEquals(1, changeResponse50.getDimeCount());
+        assertEquals(1, changeResponse50.getNickelCount());
+        assertEquals(1, changeResponse50.getPennyCount());
+    }
 
-        ChangeResponse changeResponse20a = changeService.makeChange(TWENTY_DOLLAR_BILL);
-        assertEquals(80, changeResponse20a.getQuarterCount());
-        assertEquals(0, changeResponse20a.getDimeCount());
-        assertEquals(0, changeResponse20a.getNickelCount());
-        assertEquals(0, changeResponse20a.getPennyCount());
+    @Test
+    void makeChange_Twenty_dollars_success() {
+        ChangeResponse changeResponse20 = changeService.makeChange(TWENTY_DOLLAR_BILL);
+        assertEquals(58, changeResponse20.getThirtyfourCount());
+        assertEquals(0, changeResponse20.getThirtythreeCount());
+        assertEquals(1, changeResponse20.getQuarterCount());
+        assertEquals(0, changeResponse20.getDimeCount());
+        assertEquals(0, changeResponse20.getNickelCount());
+        assertEquals(3, changeResponse20.getPennyCount());
+    }
 
-        ChangeResponse changeResponse20b = changeService.makeChange(TWENTY_DOLLAR_BILL);
-        assertEquals(20, changeResponse20b.getQuarterCount());
-        assertEquals(100, changeResponse20b.getDimeCount());
-        assertEquals(100, changeResponse20b.getNickelCount());
-        assertEquals(0, changeResponse20b.getPennyCount());
+    @Test
+    void makeChange_Ten_dollars_success() {
+        ChangeResponse changeResponse10 = changeService.makeChange(TEN_DOLLAR_BILL);
+        assertEquals(29, changeResponse10.getThirtyfourCount());
+        assertEquals(0, changeResponse10.getThirtythreeCount());
+        assertEquals(0, changeResponse10.getQuarterCount());
+        assertEquals(1, changeResponse10.getDimeCount());
+        assertEquals(0, changeResponse10.getNickelCount());
+        assertEquals(4, changeResponse10.getPennyCount());
 
-        Exception exception = assertThrows(NotEnoughChangeException.class, () -> changeService.makeChange(TWENTY_DOLLAR_BILL));
-        final String expectedMessage = "Not enough money to change a $20 bill";
-        String actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+    @Test
+    void makeChange_Five_dollars_success() {
+        ChangeResponse changeResponse5 = changeService.makeChange(FIVE_DOLLAR_BILL);
+        assertEquals(14, changeResponse5.getThirtyfourCount());
+        assertEquals(0, changeResponse5.getThirtythreeCount());
+        assertEquals(0, changeResponse5.getQuarterCount());
+        assertEquals(2, changeResponse5.getDimeCount());
+        assertEquals(0, changeResponse5.getNickelCount());
+        assertEquals(4, changeResponse5.getPennyCount());
+
+    }
+
+    @Test
+    void makeChange_Two_dollars_success() {
+        ChangeResponse changeResponse2 = changeService.makeChange(TWO_DOLLAR_BILL);
+        assertEquals(5, changeResponse2.getThirtyfourCount());
+        assertEquals(0, changeResponse2.getThirtythreeCount());
+        assertEquals(1, changeResponse2.getQuarterCount());
+        assertEquals(0, changeResponse2.getDimeCount());
+        assertEquals(1, changeResponse2.getNickelCount());
+        assertEquals(0, changeResponse2.getPennyCount());
+
+    }
+
+    @Test
+    void makeChange_One_dollar_success() {
+        ChangeResponse changeResponse1 = changeService.makeChange(ONE_DOLLAR_BILL);
+        assertEquals(2, changeResponse1.getThirtyfourCount());
+        assertEquals(0, changeResponse1.getThirtythreeCount());
+        assertEquals(1, changeResponse1.getQuarterCount());
+        assertEquals(0, changeResponse1.getDimeCount());
+        assertEquals(1, changeResponse1.getNickelCount());
+        assertEquals(2, changeResponse1.getPennyCount());
 
     }
 
     @Test
     void fillDrawer_Coins_Of_Each() {
-        changeService.fillDrawer(new FillDrawerRequest(400, 300, 200, 100));
+        changeService.fillDrawer(new FillDrawerRequest(600, 500, 400, 300, 200, 100));
         FillDrawerResponse fillDrawerResponse = changeService.getDrawerCounts();
+        assertEquals(600, fillDrawerResponse.getThirtyfourCount());
+        assertEquals(500, fillDrawerResponse.getThirtythreeCount());
         assertEquals(400, fillDrawerResponse.getQuarterCount());
         assertEquals(300, fillDrawerResponse.getDimeCount());
         assertEquals(200, fillDrawerResponse.getNickelCount());

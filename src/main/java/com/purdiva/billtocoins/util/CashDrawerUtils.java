@@ -11,10 +11,12 @@ import java.util.Map;
 
 public class CashDrawerUtils {
 
-    public static final Coin PENNY = new Coin("penny", new BigDecimal(0.01));
-    public static final Coin NICKEL = new Coin("nickel", new BigDecimal(0.05));
-    public static final Coin DIME = new Coin("dime", new BigDecimal(0.10));
-    public static final Coin QUARTER = new Coin("quarter", new BigDecimal(0.25));
+    public static final Coin PENNY = new Coin("penny", new BigDecimal("0.01"));
+    public static final Coin NICKEL = new Coin("nickel", new BigDecimal("0.05"));
+    public static final Coin DIME = new Coin("dime", new BigDecimal("0.10"));
+    public static final Coin QUARTER = new Coin("quarter", new BigDecimal("0.25"));
+    public static final Coin THIRTYTHREE = new Coin("thirtythree", new BigDecimal("0.33"));
+    public static final Coin THIRTYFOUR = new Coin("thirtyfour", new BigDecimal("0.34"));
     public static final Integer HUNDRED_DOLLAR_BILL = 100;
     public static final Integer FIFTY_DOLLAR_BILL = 50;
     public static final Integer FORTY_DOLLAR_BILL = 40;
@@ -27,6 +29,12 @@ public class CashDrawerUtils {
 
     @Component
     public static class CashDrawer implements InitializingBean {
+
+        @Value("${cashdrawer.initialize.thirtyfourcount}")
+        Integer beginThirtyfourCount;
+
+        @Value("${cashdrawer.initialize.thirtythreecount}")
+        Integer beginThirtythreeCount;
 
         @Value("${cashdrawer.initialize.quartercount}")
         Integer beginQuarterCount;
@@ -41,21 +49,14 @@ public class CashDrawerUtils {
         Integer beginPennyCount;
 
 
-        private Map<Coin, Integer> coins = new HashMap<>() {{
+        private final Map<Coin, Integer> coins = new HashMap<>() {{
+            put(THIRTYFOUR, beginThirtyfourCount);
+            put(THIRTYTHREE, beginThirtythreeCount);
             put(QUARTER, beginQuarterCount);
             put(DIME, beginDimeCount);
             put(NICKEL, beginNickelCount);
             put(PENNY, beginPennyCount);
         }};
-
-
-        public Map<Coin, Integer> getCoins() {
-            return this.coins;
-        }
-
-        public void setCoins(Map<Coin, Integer> coins) {
-            this.coins = coins;
-        }
 
         public Integer getPennyCount() { return coins.get(PENNY); }
 
@@ -77,11 +78,29 @@ public class CashDrawerUtils {
 
         public void setQuarterCount(Integer quarterCount) { coins.put(QUARTER, quarterCount); }
 
+        public Integer getThirtythreeCount() { return coins.get(THIRTYTHREE); }
+
+        public void setThirtythreeCount(Integer thirtythreeCount) { coins.put(THIRTYTHREE, thirtythreeCount); }
+
+        public Integer getThirtyfourCount() { return coins.get(THIRTYFOUR); }
+
+        public void setThirtyfourCount(Integer thirtyfourCount) { coins.put(THIRTYFOUR, thirtyfourCount); }
+
         public void resetCashDrawer() {
+            setThirtyfourCount(beginThirtyfourCount);
+            setThirtythreeCount(beginThirtythreeCount);
             setQuarterCount(beginQuarterCount);
             setDimeCount(beginDimeCount);
             setNickelCount(beginNickelCount);
             setPennyCount(beginPennyCount);
+        }
+
+        public Integer getCoinCountByType(Coin coin) {
+            return coins.get(coin).intValue();
+        }
+
+        public void setCoinCountByType(Coin coin, Integer countCoins) {
+            this.coins.put(coin, countCoins);
         }
 
         @Override
